@@ -1,11 +1,19 @@
-import { shallowRef } from 'vue';
+import { Ref, shallowRef } from 'vue';
 
-export const useState = <T>(initialValue: T) => {
-  const value = shallowRef<T>(initialValue);
+function isStateFunction<T>(s: T | ((prevValue: T) => T)): s is (prevValue: T) => T {
+  return typeof s === 'function';
+}
 
-  const updateValue = (updatedValue: T) => {
-    value.value = updatedValue;
+export const useState = <T>(state: T) => {
+  const value = shallowRef<T>(state);
+
+  const updateValue = (updatedValue: T | ((prevValue: T) => T)) => {
+    if (isStateFunction(updatedValue)) {
+      value.value = (updatedValue as (prevValue: T) => T)(value.value);
+    } else {
+      value.value = updatedValue;
+    }
   };
 
-  return [value, updateValue] as const;
+  return [value as Readonly<Ref<T>>, updateValue] as const;
 };
